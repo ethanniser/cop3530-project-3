@@ -10,6 +10,8 @@ frontend:
 test: compile-tests
     cd backend && ./build/Tests
 
+compile: compile-backend compile-tests
+
 compile-tests:
     cd backend && cmake --build build --target Tests
 
