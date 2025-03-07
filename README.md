@@ -35,6 +35,6 @@ To run the backend server, run `just backend`.
 To run backend tests, run `just test`.
 
 To run the frontend, run `just frontend`.
-The frontend will be served on [http://localhost:3000](http://localhost:3000).
+The frontend will be served on [http://localhost:5173](http://localhost:5173).
 
 To run both, run `just`.
