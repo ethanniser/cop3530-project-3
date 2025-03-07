@@ -1,1 +1,25 @@
 # COP3530 Project 3
+
+## Getting Started
+
+This project has a `justfile`, which just provides some shorthands for running common commands. You don't _need_ to use `just`, but it's pretty convenient.
+
+There are a bunch of ways to install `just`, depending on whatever package manager you wish to use.
+
+Any of these will work:
+
+```bash
+cargo install just
+brew install just
+npm install -g rust-just
+apt install just
+```
+
+## Running the Project
+
+To run the backend server, run `just backend`.
+To run backend tests, run `just test`.
+
+To run the frontend, run `just frontend`.
+
+To run both, run `just`.
