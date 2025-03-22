@@ -31,6 +31,12 @@ add_executable(Main
     src/lib.cpp
 )
 
+#For some reason had to be added to make main run
+if (WIN32)
+    target_link_libraries(Main PRIVATE ws2_32)
+    target_link_libraries(Main PRIVATE ws2_32 mswsock)
+endif()
+
 target_include_directories(Main PRIVATE
     src
     ${asio_SOURCE_DIR}/asio/include
