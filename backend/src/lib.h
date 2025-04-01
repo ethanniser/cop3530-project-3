@@ -1,3 +1,17 @@
 #pragma once
 
-int foo();
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+
+class AdjacencyList
+{
+private:
+    std::unordered_map<int, std::unordered_set<int>> map;
+
+public:
+    void addEdge(int from, int to);
+    std::vector<int> findPathBFS(int source, int destination);
+    static AdjacencyList loadEdgesFromDirectory(std::string path);
+};

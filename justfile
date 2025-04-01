@@ -1,22 +1,17 @@
 default:
     just backend & just frontend & wait
 
-backend: compile-backend
+backend: compile
     cd backend && ./build/Main
 
 frontend:
     cd frontend && bun run dev
 
-test: compile-tests
+test: compile
     cd backend && ./build/Tests
 
-compile: compile-backend compile-tests
-
-compile-tests:
-    cd backend && cmake --build build --target Tests
-
-compile-backend:
-    cd backend && cmake --build build --target Main
+compile:
+    cd backend && cmake --build build 
 
 setup-frontend:
     cd frontend && bun install
