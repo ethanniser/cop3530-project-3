@@ -14,6 +14,7 @@
 #include <queue>
 #include <unordered_set>
 #include <algorithm>
+#include<stack>
 
 #include "lib.h"
 
@@ -36,11 +37,34 @@ void AdjacencyList::addEdge(int from, int to)
     }
 }
 
+std::vector<int> AdjacencyList::reconstructPath(int source, int destination, std::unordered_map<int, int> pred) {
+    //Reconstructs the path after a traversal is performed
+    //pred begins with the destination and works back up to source
+    std::vector<int> path;
+    int current = destination;
+    while (current != source)
+    {
+        path.push_back(current);
+        current = pred[current];
+    }
+    path.push_back(source);
+
+    // Reverse since we worked up backwards
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+
+
 std::vector<int> AdjacencyList::findPathBFS(int source, int destination)
 {
     std::queue<int> q;
     std::unordered_set<int> visited;   // intracks visited nodes
     std::unordered_map<int, int> pred; // Map to record predecessor of each node
+
+    if(source == destination) {
+        return {source}; //If the source and destination are the same, return the source
+    }
 
     q.push(source);
     visited.insert(source);
@@ -80,16 +104,57 @@ std::vector<int> AdjacencyList::findPathBFS(int source, int destination)
 
     if (found)
     {
-        // Start from the destination and move backwards using the parent map.
-        int current = destination;
-        while (current != source)
-        {
-            path.push_back(current);
-            current = pred[current];
+        path = reconstructPath(source, destination, pred);
+    }
+    return path;
+}
+
+std::vector<int> AdjacencyList::findPathDFS(int source, int destination)
+{
+    std::stack<int> s;
+    std::unordered_set<int> visited; //tracks visited nodes
+    std::unordered_map<int, int> pred; //Map to record predecessor of each node
+
+    if(source == destination) {
+        return {source}; //If the source and destination are the same, return the source
+    }
+
+    s.push(source);
+    visited.insert(source);
+
+    bool found = false; // flag to indicate if destination is found
+
+    while(!s.empty() && !found) {
+        int current = s.top();
+        s.pop();
+
+        //iterate over all neighbors of current node
+        auto it = map.find(current);
+        if(it != map.end()) {
+            for(int neighbor : it->second) {
+                if(visited.find(neighbor) == visited.end()) {
+                    visited.insert(neighbor);
+                    pred[neighbor] = current; //records how we reached neighbor
+                    s.push(neighbor);
+                }
+
+                //once destination is found, break out of loop
+                if(neighbor == destination) {
+                    found = true;
+                    break;
+                }
+
+            }
         }
-        path.push_back(source);
-        // Reverse since we worked up backwards
-        std::reverse(path.begin(), path.end());
+
+    }
+
+    // Reconstruct path
+    std::vector<int> path;
+
+    if (found)
+    {
+        path = reconstructPath(source, destination, pred);
     }
     return path;
 }
