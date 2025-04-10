@@ -20,31 +20,15 @@
  *     "exploredPath": [int], - The nodes that were explored during the search, in order
  *     "sharedFeatures": [string], - The features that are shared between the source and destination nodes
  *   }
- *
- * /graph
- * Query Params: None
- *
- * Response:
- *   200 OK
- *   Content-Type: application/json
- *   {
- *     "nodes": [
- *       {
- *         "id": int, - The id of the node
- *         "features": [string] - The features associated with the node
- *       },
- *       ...
- *     ],
- *     "edges": [
- *       {
- *         "source": int, - The id of the source node
- *         "target": int - The id of the target node
- *       },
- *       ...
- *     ]
- *   }
- *
  */
+
+crow::response addCorsHeaders(crow::response &&response)
+{
+  response.add_header("Access-Control-Allow-Origin", "*");
+  response.add_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.add_header("Access-Control-Allow-Headers", "Content-Type");
+  return std::move(response);
+}
 
 int main()
 {
@@ -57,42 +41,7 @@ int main()
 
   CROW_ROUTE(app, "/")
   ([]()
-   { return "Hello world!"; });
-
-  CROW_ROUTE(app, "/graph")
-  ([&adjacencyList, &featuresStore]()
-   {
-    crow::json::wvalue response;
-    
-    // Convert adjacency list to JSON
-    crow::json::wvalue::list nodes_list;
-    crow::json::wvalue::list edges_list;
-    
-    for (const auto& [node, neighbors] : adjacencyList.getMap()) {
-      // Add node with its features
-      crow::json::wvalue node_obj;
-      node_obj["id"] = node;
-      auto features = std::vector<std::string>(featuresStore.getFeatures(node).begin(), featuresStore.getFeatures(node).end());
-      crow::json::wvalue::list features_list;
-      for (const auto& feature : features) {
-        features_list.push_back(feature);
-      }
-      node_obj["features"] = std::move(features_list);
-      nodes_list.push_back(node_obj);
-      
-      // Add edges
-      for (const auto& neighbor : neighbors) {
-        crow::json::wvalue edge_obj;
-        edge_obj["source"] = node;
-        edge_obj["target"] = neighbor;
-        edges_list.push_back(edge_obj);
-      }
-    }
-    
-    response["nodes"] = std::move(nodes_list);
-    response["edges"] = std::move(edges_list);
-    
-    return crow::response{response}; });
+   { return addCorsHeaders(crow::response("Hello world!")); });
 
   CROW_ROUTE(app, "/path")
   ([&adjacencyList, &featuresStore](const crow::request &req)
@@ -102,7 +51,7 @@ int main()
     auto method_str = req.url_params.get("method");
 
     if (!source_str || !destination_str) {
-      return crow::response(400, "Source and destination are required.");
+      return addCorsHeaders(crow::response(400, "Source and destination are required."));
     }
 
     int source, destination;
@@ -110,7 +59,7 @@ int main()
       source = std::stoi(source_str);
       destination = std::stoi(destination_str);
     } catch (const std::exception &e) {
-      return crow::response(400, "Invalid source or destination.");
+      return addCorsHeaders(crow::response(400, "Invalid source or destination."));
     }
 
     PathResult result;
@@ -119,7 +68,7 @@ int main()
     } else if (std::string(method_str) == "astar") {
       result = adjacencyList.findPathAStar(source, destination, featuresStore);
     } else {
-      return crow::response(400, "Invalid method. Use 'bfs' or 'astar'.");
+      return addCorsHeaders(crow::response(400, "Invalid method. Use 'bfs' or 'astar'."));
     }
 
     // Get shared features
@@ -137,7 +86,12 @@ int main()
     }
     response["sharedFeatures"] = std::move(shared_features_list);
 
-    return crow::response{response}; });
+    return addCorsHeaders(crow::response{response}); });
+
+  // Add OPTIONS handler for CORS preflight requests
+  CROW_ROUTE(app, "/path")
+      .methods("OPTIONS"_method)([]()
+                                 { return addCorsHeaders(crow::response(200)); });
 
   app.port(8080).concurrency(4).run();
 }
