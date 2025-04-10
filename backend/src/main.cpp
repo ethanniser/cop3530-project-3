@@ -21,17 +21,78 @@
  *     "sharedFeatures": [string], - The features that are shared between the source and destination nodes
  *   }
  *
+ * /graph
+ * Query Params: None
+ *
+ * Response:
+ *   200 OK
+ *   Content-Type: application/json
+ *   {
+ *     "nodes": [
+ *       {
+ *         "id": int, - The id of the node
+ *         "features": [string] - The features associated with the node
+ *       },
+ *       ...
+ *     ],
+ *     "edges": [
+ *       {
+ *         "source": int, - The id of the source node
+ *         "target": int - The id of the target node
+ *       },
+ *       ...
+ *     ]
+ *   }
+ *
  */
 
 int main()
 {
+  std::cout << "Loading graph..." << std::endl;
   auto adjacencyList = AdjacencyList::loadEdgesFromDirectory("../data/twitter");
+  std::cout << "Loading features..." << std::endl;
   auto featuresStore = FeaturesStore::loadFeaturesFromDirectory("../data/twitter");
+  std::cout << "Graph loaded successfully." << std::endl;
   crow::SimpleApp app;
 
   CROW_ROUTE(app, "/")
   ([]()
    { return "Hello world!"; });
+
+  CROW_ROUTE(app, "/graph")
+  ([&adjacencyList, &featuresStore]()
+   {
+    crow::json::wvalue response;
+    
+    // Convert adjacency list to JSON
+    crow::json::wvalue::list nodes_list;
+    crow::json::wvalue::list edges_list;
+    
+    for (const auto& [node, neighbors] : adjacencyList.getMap()) {
+      // Add node with its features
+      crow::json::wvalue node_obj;
+      node_obj["id"] = node;
+      auto features = std::vector<std::string>(featuresStore.getFeatures(node).begin(), featuresStore.getFeatures(node).end());
+      crow::json::wvalue::list features_list;
+      for (const auto& feature : features) {
+        features_list.push_back(feature);
+      }
+      node_obj["features"] = std::move(features_list);
+      nodes_list.push_back(node_obj);
+      
+      // Add edges
+      for (const auto& neighbor : neighbors) {
+        crow::json::wvalue edge_obj;
+        edge_obj["source"] = node;
+        edge_obj["target"] = neighbor;
+        edges_list.push_back(edge_obj);
+      }
+    }
+    
+    response["nodes"] = std::move(nodes_list);
+    response["edges"] = std::move(edges_list);
+    
+    return crow::response{response}; });
 
   CROW_ROUTE(app, "/path")
   ([&adjacencyList, &featuresStore](const crow::request &req)

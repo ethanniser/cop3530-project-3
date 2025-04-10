@@ -247,3 +247,8 @@ std::unordered_set<std::string> FeaturesStore::sharedFeatures(NodeID node1, Node
                           std::inserter(shared, shared.begin()));
     return shared;
 }
+
+std::unordered_map<NodeID, std::unordered_set<NodeID>> AdjacencyList::getMap()
+{
+    return map;
+}

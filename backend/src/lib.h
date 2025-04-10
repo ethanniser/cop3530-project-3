@@ -35,6 +35,8 @@ public:
     PathResult findPathBFS(NodeID source, NodeID destination);
     PathResult findPathAStar(NodeID source, NodeID destination, FeaturesStore &features);
 
+    std::unordered_map<NodeID, std::unordered_set<NodeID>> getMap();
+
 private:
     std::unordered_map<NodeID, std::unordered_set<NodeID>> map;
 };
