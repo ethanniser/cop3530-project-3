@@ -26,6 +26,7 @@
 int main()
 {
   auto adjacencyList = AdjacencyList::loadEdgesFromDirectory("../data/twitter");
+  auto featuresStore = FeaturesStore::loadFeaturesFromDirectory("../data/twitter");
   crow::SimpleApp app;
 
   CROW_ROUTE(app, "/")
@@ -33,10 +34,11 @@ int main()
    { return "Hello world!"; });
 
   CROW_ROUTE(app, "/path")
-  ([&adjacencyList](const crow::request &req)
+  ([&adjacencyList, &featuresStore](const crow::request &req)
    {
     auto source_str = req.url_params.get("source");
     auto destination_str = req.url_params.get("destination");
+    auto method_str = req.url_params.get("method");
 
     if (!source_str || !destination_str) {
       return crow::response(400, "Source and destination are required.");
@@ -50,15 +52,31 @@ int main()
       return crow::response(400, "Invalid source or destination.");
     }
 
-    std::vector<int> path =
-        adjacencyList.findPathBFS(source, destination);
-
-    crow::json::wvalue::list json_list;
-    for (int node : path) {
-        json_list.push_back(node);
+    PathResult result;
+    if (!method_str || std::string(method_str) == "bfs") {
+      result = adjacencyList.findPathBFS(source, destination);
+    } else if (std::string(method_str) == "astar") {
+      result = adjacencyList.findPathAStar(source, destination, featuresStore);
+    } else {
+      return crow::response(400, "Invalid method. Use 'bfs' or 'astar'.");
     }
 
-    return crow::response{crow::json::wvalue(json_list)}; });
+    // Get shared features
+    auto shared_features = featuresStore.sharedFeatures(source, destination);
+    
+    // Create response
+    crow::json::wvalue response;
+    response["finalPath"] = result.finalPath;
+    response["exploredPath"] = result.exploredPath;
+    
+    // Convert shared features to JSON array
+    crow::json::wvalue::list shared_features_list;
+    for (const auto& feature : shared_features) {
+      shared_features_list.push_back(crow::json::wvalue(feature));
+    }
+    response["sharedFeatures"] = std::move(shared_features_list);
+
+    return crow::response{response}; });
 
   app.port(8080).concurrency(4).run();
 }
