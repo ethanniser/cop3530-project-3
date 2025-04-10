@@ -3,18 +3,38 @@
 #include <sstream>
 #include <vector>
 
+/**
+ * API:
+ *
+ * /path
+ * Query Params:
+ *   source: int (required) - The id of the source node.
+ *   destination: int (required) - The id of the destination node.
+ *   method: "bfs" or "astar" - The method to use for finding the path.
+ *
+ * Response:
+ *   200 OK
+ *   Content-Type: application/json
+ *   {
+ *     "finalPath": [int], - The path from the source to the destination node, in order
+ *     "exploredPath": [int], - The nodes that were explored during the search, in order
+ *     "sharedFeatures": [string], - The features that are shared between the source and destination nodes
+ *   }
+ *
+ */
+
 int main()
 {
-    auto adjacencyList = AdjacencyList::loadEdgesFromDirectory("../data/twitter");
-    crow::SimpleApp app;
+  auto adjacencyList = AdjacencyList::loadEdgesFromDirectory("../data/twitter");
+  crow::SimpleApp app;
 
-    CROW_ROUTE(app, "/")
-    ([]()
-     { return "Hello world!"; });
+  CROW_ROUTE(app, "/")
+  ([]()
+   { return "Hello world!"; });
 
-    CROW_ROUTE(app, "/path")
-    ([&adjacencyList](const crow::request &req)
-     {
+  CROW_ROUTE(app, "/path")
+  ([&adjacencyList](const crow::request &req)
+   {
     auto source_str = req.url_params.get("source");
     auto destination_str = req.url_params.get("destination");
 
@@ -40,5 +60,5 @@ int main()
 
     return crow::response{crow::json::wvalue(json_list)}; });
 
-    app.port(8080).concurrency(4).run();
+  app.port(8080).concurrency(4).run();
 }

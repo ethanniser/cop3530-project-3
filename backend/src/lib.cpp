@@ -14,11 +14,11 @@
 #include <queue>
 #include <unordered_set>
 #include <algorithm>
-#include<stack>
+#include <stack>
 
 #include "lib.h"
 
-void AdjacencyList::addEdge(int from, int to)
+void AdjacencyList::addEdge(NodeID from, NodeID to)
 {
     // append if exists or initialize for the first time
     if (map.count(from))
@@ -37,126 +37,14 @@ void AdjacencyList::addEdge(int from, int to)
     }
 }
 
-std::vector<int> AdjacencyList::reconstructPath(int source, int destination, std::unordered_map<int, int> pred) {
-    //Reconstructs the path after a traversal is performed
-    //pred begins with the destination and works back up to source
-    std::vector<int> path;
-    int current = destination;
-    while (current != source)
-    {
-        path.push_back(current);
-        current = pred[current];
-    }
-    path.push_back(source);
-
-    // Reverse since we worked up backwards
-    std::reverse(path.begin(), path.end());
-    return path;
+PathResult AdjacencyList::findPathBFS(NodeID source, NodeID destination)
+{
+    throw std::runtime_error("Not implemented");
 }
 
-
-
-std::vector<int> AdjacencyList::findPathBFS(int source, int destination)
+PathResult findPathAStar(NodeID source, NodeID destination, FeaturesStore &features)
 {
-    std::queue<int> q;
-    std::unordered_set<int> visited;   // intracks visited nodes
-    std::unordered_map<int, int> pred; // Map to record predecessor of each node
-
-    if(source == destination) {
-        return {source}; //If the source and destination are the same, return the source
-    }
-
-    q.push(source);
-    visited.insert(source);
-
-    bool found = false; // flag to indicate if destination is found
-
-    while (!q.empty() && !found)
-    {
-        int current = q.front();
-        q.pop();
-
-        // iterate over all neighbors of current node
-        auto it = map.find(current);
-        if (it != map.end())
-        {
-            for (int neighbor : it->second)
-            {
-                if (visited.find(neighbor) == visited.end())
-                {
-                    visited.insert(neighbor);
-                    pred[neighbor] = current; // Records how we reached neighbor
-                    q.push(neighbor);
-
-                    // Once destination is found, exit loop
-                    if (neighbor == destination)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Reconstruct path
-    std::vector<int> path;
-
-    if (found)
-    {
-        path = reconstructPath(source, destination, pred);
-    }
-    return path;
-}
-
-std::vector<int> AdjacencyList::findPathDFS(int source, int destination)
-{
-    std::stack<int> s;
-    std::unordered_set<int> visited; //tracks visited nodes
-    std::unordered_map<int, int> pred; //Map to record predecessor of each node
-
-    if(source == destination) {
-        return {source}; //If the source and destination are the same, return the source
-    }
-
-    s.push(source);
-    visited.insert(source);
-
-    bool found = false; // flag to indicate if destination is found
-
-    while(!s.empty() && !found) {
-        int current = s.top();
-        s.pop();
-
-        //iterate over all neighbors of current node
-        auto it = map.find(current);
-        if(it != map.end()) {
-            for(int neighbor : it->second) {
-                if(visited.find(neighbor) == visited.end()) {
-                    visited.insert(neighbor);
-                    pred[neighbor] = current; //records how we reached neighbor
-                    s.push(neighbor);
-                }
-
-                //once destination is found, break out of loop
-                if(neighbor == destination) {
-                    found = true;
-                    break;
-                }
-
-            }
-        }
-
-    }
-
-    // Reconstruct path
-    std::vector<int> path;
-
-    if (found)
-    {
-        path = reconstructPath(source, destination, pred);
-    }
-    return path;
+    throw std::runtime_error("Not implemented");
 }
 
 AdjacencyList AdjacencyList::loadEdgesFromDirectory(std::string path)
@@ -182,4 +70,75 @@ AdjacencyList AdjacencyList::loadEdgesFromDirectory(std::string path)
         }
     }
     return al;
+}
+
+FeaturesStore FeaturesStore::loadFeaturesFromDirectory(std::string path)
+{
+    FeaturesStore fs;
+    namespace fs = std::filesystem;
+    fs::path folder = path;
+    for (auto &file : fs::directory_iterator(folder))
+    { // iterates through folder
+        if (file.is_regular_file() && file.path().extension() == ".featnames")
+        {
+
+            std::vector<std::string> features;
+
+            // extract feature names
+            std::ifstream namesFile(file.path());
+            std::string line;
+            while (std::getline(namesFile, line))
+            {
+                std::istringstream iss(line);
+                // line looks like "46 #foo"
+                int index;
+                std::string feature;
+                iss >> index >> feature;
+                features.push_back(feature);
+            }
+            namesFile.close();
+
+            // add features
+            auto newPath = file.path();
+            newPath.replace_extension(".feat");
+            std::ifstream featFile(newPath);
+            while (std::getline(featFile, line))
+            {
+                std::istringstream iss(line);
+                // line looks like "1186 0 0 0 1 0 0 0 0 0"
+                int nodeId;
+                iss >> nodeId;
+                for (int i = 0; i < features.size(); i++)
+                {
+                    std::string feature = features[i];
+                    if (iss.peek() == EOF)
+                    {
+                        break;
+                    }
+                    iss >> feature;
+                    fs.addFeature(nodeId, feature);
+                }
+            }
+            featFile.close();
+        }
+    }
+    return fs;
+}
+
+void FeaturesStore::addFeature(NodeID node, std::string feature)
+{
+    features[node].insert(feature);
+}
+
+std::unordered_set<std::string> FeaturesStore::getFeatures(NodeID node)
+{
+    return features[node];
+}
+
+std::unordered_set<std::string> FeaturesStore::sharedFeatures(NodeID node1, NodeID node2)
+{
+    std::unordered_set<std::string> shared;
+    std::set_union(features[node1].begin(), features[node1].end(), features[node2].begin(), features[node2].end(),
+                   std::inserter(shared, shared.begin()));
+    return shared;
 }
