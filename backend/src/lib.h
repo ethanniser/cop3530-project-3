@@ -33,6 +33,7 @@ public:
 
     void addEdge(NodeID from, NodeID to);
     PathResult findPathBFS(NodeID source, NodeID destination);
+    PathResult findPathDFS(NodeID source, NodeID destination);
     PathResult findPathAStar(NodeID source, NodeID destination, FeaturesStore &features);
 
     std::unordered_map<NodeID, std::unordered_set<NodeID>> getMap();
