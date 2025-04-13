@@ -125,65 +125,57 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
     return { nodes, links };
   }, [pathResult]);
 
-  if (!source || !destination) {
-    return (
-      <div className="flex flex-col items-center p-4">
-        <p className="text-gray-500">
-          Enter source and destination IDs to find a path
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-[calc(100vh-200px)]">
-      {pathResult ? (
-        <>
-          <div className="p-4 bg-white rounded-lg shadow mb-4">
-            <h3 className="text-lg font-bold mb-2">Path Result</h3>
-            <div className="space-y-2">
-              <p>
-                <span className="font-semibold">Final Path:</span>{" "}
-                {pathResult.finalPath.join(" → ")}
-              </p>
-              <p>
-                <span className="font-semibold">Explored Nodes:</span>{" "}
-                {pathResult.exploredPath.length}
-              </p>
-              <p>
-                <span className="font-semibold">Shared Features:</span>{" "}
-                {pathResult.sharedFeatures.join(", ")}
-              </p>
-            </div>
+      {!source || !destination ? (
+        <div className="flex flex-col items-center p-4">
+          <p className="text-gray-500">
+            Enter source and destination IDs to find a path
+          </p>
+        </div>
+      ) : pathResult ? (
+        <div className="p-4 bg-white rounded-lg shadow mb-4">
+          <h3 className="text-lg font-bold mb-2">Path Result</h3>
+          <div className="space-y-2">
+            <p>
+              <span className="font-semibold">Final Path:</span>{" "}
+              {pathResult.finalPath.join(" → ")}
+            </p>
+            <p>
+              <span className="font-semibold">Explored Nodes:</span>{" "}
+              {pathResult.exploredPath.length}
+            </p>
+            <p>
+              <span className="font-semibold">Shared Features:</span>{" "}
+              {pathResult.sharedFeatures.join(", ")}
+            </p>
           </div>
-          <div
-            ref={graphRef}
-            className="flex-grow border rounded overflow-hidden"
-          >
-            <ForceGraph2D
-              graphData={graphData}
-              width={dimensions.width}
-              height={dimensions.height}
-              nodeLabel={(node: GraphNode) => `Node ${node.id}`}
-              nodeColor={(node: GraphNode) =>
-                node.isFinalPath ? "red" : "blue"
-              }
-              linkColor={(link: GraphLink) =>
-                link.isFinalPath ? "red" : "#cccccc"
-              }
-              nodeRelSize={8}
-              linkWidth={(link) => (link.isFinalPath ? 3 : 1)}
-              linkDirectionalParticles={(link) => (link.isFinalPath ? 4 : 0)}
-              linkDirectionalParticleWidth={2}
-              dagMode="td"
-              dagLevelDistance={100}
-              d3VelocityDecay={0.3}
-            />
-          </div>
-        </>
+        </div>
       ) : (
-        <p className="text-gray-500">Searching for path...</p>
+        <div className="flex flex-col items-center p-4">
+          <p className="text-gray-500">Searching for path...</p>
+        </div>
       )}
+
+      <div ref={graphRef} className="flex-grow border rounded overflow-hidden">
+        <ForceGraph2D
+          graphData={graphData}
+          width={dimensions.width}
+          height={dimensions.height}
+          nodeLabel={(node: GraphNode) => `Node ${node.id}`}
+          nodeColor={(node: GraphNode) => (node.isFinalPath ? "red" : "blue")}
+          linkColor={(link: GraphLink) =>
+            link.isFinalPath ? "red" : "#cccccc"
+          }
+          nodeRelSize={8}
+          linkWidth={(link) => (link.isFinalPath ? 3 : 1)}
+          linkDirectionalParticles={(link) => (link.isFinalPath ? 4 : 0)}
+          linkDirectionalParticleWidth={2}
+          dagMode="td"
+          dagLevelDistance={100}
+          d3VelocityDecay={0.3}
+        />
+      </div>
     </div>
   );
 };
