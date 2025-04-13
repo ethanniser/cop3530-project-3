@@ -105,20 +105,19 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
 
     // Initialize scores
     g_score[source] = 0;
-    // Heuristic is now the difference between max possible shared features and actual shared features
     double shared = features.sharedFeatures(source, destination).size();
-    double heuristic = max_features - shared; // This ensures closer nodes have lower scores
+    double heuristic = max_features - shared;
     f_score[source] = g_score[source] + heuristic;
     result.heuristic_scores[source] = f_score[source];
     parent[source] = -1;
     open_set.insert(source);
     open_queue.push(source);
+    result.exploredPath.push_back(source); // Add source to explored path
 
     while (!open_queue.empty())
     {
         NodeID current = open_queue.top();
         open_queue.pop();
-        result.exploredPath.push_back(current);
 
         if (current == destination)
         {
@@ -149,6 +148,7 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
             if (open_set.find(neighbor) == open_set.end())
             {
                 open_set.insert(neighbor);
+                result.exploredPath.push_back(neighbor); // Add newly discovered nodes to explored path
             }
             else if (tentative_g_score >= g_score[neighbor])
             {
@@ -158,7 +158,7 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
             parent[neighbor] = current;
             g_score[neighbor] = tentative_g_score;
             shared = features.sharedFeatures(neighbor, destination).size();
-            heuristic = max_features - shared; // Lower score means closer to destination
+            heuristic = max_features - shared;
             f_score[neighbor] = g_score[neighbor] + heuristic;
             result.heuristic_scores[neighbor] = f_score[neighbor];
             open_queue.push(neighbor);
