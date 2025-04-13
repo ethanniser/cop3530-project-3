@@ -12,19 +12,33 @@ const exampleNodes = [
 
 // Example pairs for quick loading
 const examples = [
-  { source: 250178329, destination: 529007327 },
-  { source: 314316607, destination: 447688115 },
-  { source: 69592091, destination: 461410856 },
+  {
+    source: 314316607,
+    destination: 250178329,
+    note: "A* can be much faster than BFS by prioritizing paths with shared interests",
+  },
+  {
+    source: 250178329,
+    destination: 529007327,
+    note: "A* isn't always faster",
+  },
+  {
+    source: 69592091,
+    destination: 59588845,
+    note: 'With nothing in common, BFS may be faster as it explores more "diverse" paths',
+  },
 ];
 
 function App() {
   const [source, setSource] = useState<number | null>(null);
   const [destination, setDestination] = useState<number | null>(null);
   const [method, setMethod] = useState<"bfs" | "astar">("bfs");
+  const [activeExample, setActiveExample] = useState<number | null>(null);
 
   const loadExample = (index: number) => {
     setSource(examples[index].source);
     setDestination(examples[index].destination);
+    setActiveExample(index);
   };
 
   return (
@@ -46,14 +60,18 @@ function App() {
                 list="sourceNodes"
                 placeholder="Source node"
                 value={source || ""}
-                onChange={(e) =>
-                  setSource(e.target.value ? Number(e.target.value) : null)
-                }
+                onChange={(e) => {
+                  setSource(e.target.value ? Number(e.target.value) : null);
+                  setActiveExample(null);
+                }}
                 className="border p-2 rounded pr-8"
               />
               {source !== null && (
                 <button
-                  onClick={() => setSource(null)}
+                  onClick={() => {
+                    setSource(null);
+                    setActiveExample(null);
+                  }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   ×
@@ -71,14 +89,20 @@ function App() {
                 list="destinationNodes"
                 placeholder="Destination node"
                 value={destination || ""}
-                onChange={(e) =>
-                  setDestination(e.target.value ? Number(e.target.value) : null)
-                }
+                onChange={(e) => {
+                  setDestination(
+                    e.target.value ? Number(e.target.value) : null
+                  );
+                  setActiveExample(null);
+                }}
                 className="border p-2 rounded pr-8"
               />
               {destination !== null && (
                 <button
-                  onClick={() => setDestination(null)}
+                  onClick={() => {
+                    setDestination(null);
+                    setActiveExample(null);
+                  }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   ×
@@ -99,7 +123,7 @@ function App() {
               <option value="astar">A*</option>
             </select>
             <div className="flex gap-2">
-              {[0, 1, 2].map((i) => (
+              {examples.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => loadExample(i)}
@@ -118,7 +142,26 @@ function App() {
               </div>
             }
           >
-            <Graph source={source} destination={destination} method={method} />
+            {!source || !destination ? (
+              <div className="w-full h-[600px] border rounded flex items-center justify-center">
+                <p className="text-gray-500">
+                  Enter source and destination IDs to find a path
+                </p>
+              </div>
+            ) : (
+              <div>
+                {activeExample !== null && (
+                  <p className="text-gray-500 mb-4">
+                    Example {activeExample + 1}: {examples[activeExample].note}
+                  </p>
+                )}
+                <Graph
+                  source={source}
+                  destination={destination}
+                  method={method}
+                />
+              </div>
+            )}
           </Suspense>
         </main>
       </div>

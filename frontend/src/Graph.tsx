@@ -229,6 +229,9 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
             }`
           }
           nodeColor={(node: GraphNode) => {
+            if (node.isFinalPath) {
+              return "#22c55e"; // Green color for final path
+            }
             if (method === "astar" && node.heuristicScore !== undefined) {
               const scores = Object.values(pathResult?.heuristic_scores || {});
               const maxScore = Math.max(...scores);
@@ -238,9 +241,12 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
                 maxScore - minScore
               );
             }
-            return node.isFinalPath ? "red" : "blue";
+            return "blue";
           }}
           linkColor={(link: GraphLink) => {
+            if (link.isFinalPath) {
+              return "#22c55e"; // Green color for final path
+            }
             if (method === "astar" && link.heuristicScore !== undefined) {
               const scores = Object.values(pathResult?.heuristic_scores || {});
               const maxScore = Math.max(...scores);
@@ -250,15 +256,17 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
                 maxScore - minScore
               );
             }
-            return link.isFinalPath ? "red" : "#cccccc";
+            return "#cccccc";
           }}
           nodeRelSize={8}
           linkWidth={(link) => (link.isFinalPath ? 3 : 1)}
           linkDirectionalParticles={(link) => (link.isFinalPath ? 4 : 0)}
           linkDirectionalParticleWidth={2}
           dagMode="td"
-          dagLevelDistance={100}
+          dagLevelDistance={200}
           d3VelocityDecay={0.3}
+          cooldownTime={3000}
+          d3AlphaMin={0.1}
         />
       </div>
     </div>
