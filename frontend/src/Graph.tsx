@@ -52,7 +52,7 @@ const fetchPath = async (
 
 const getHeuristicColor = (score: number, maxScore: number) => {
   // Convert score to a color from blue (low) to red (high)
-  const normalizedScore = score / maxScore;
+  const normalizedScore = Math.max(0, Math.min(1, score / maxScore));
   const r = Math.round(255 * normalizedScore);
   const b = Math.round(255 * (1 - normalizedScore));
   return `rgb(${r}, 0, ${b})`;
@@ -89,11 +89,6 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
 
     // Create a set of nodes in the final path for quick lookup
     const finalPathNodes = new Set(pathResult.finalPath);
-
-    // Find max heuristic score for normalization
-    const maxHeuristicScore = Math.max(
-      ...Object.values(pathResult.heuristic_scores || {})
-    );
 
     // Create nodes and calculate their levels
     const nodes: GraphNode[] = [];
@@ -166,8 +161,15 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
             </p>
             <p>
               <span className="font-semibold">Shared Features:</span>{" "}
-              {pathResult.sharedFeatures.join(", ")}
+              {pathResult.sharedFeatures?.join(", ")}
             </p>
+            {method === "astar" && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="font-semibold">Heuristic Scale:</span>
+                <div className="w-32 h-4 bg-gradient-to-r from-blue-500 to-red-500 rounded" />
+                <span className="text-sm">Low → High Cost</span>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -184,25 +186,31 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
           nodeLabel={(node: GraphNode) =>
             `Node ${node.id}${
               node.heuristicScore !== undefined
-                ? ` (h=${node.heuristicScore})`
+                ? ` (cost=${node.heuristicScore.toFixed(2)})`
                 : ""
             }`
           }
           nodeColor={(node: GraphNode) => {
             if (method === "astar" && node.heuristicScore !== undefined) {
-              const maxScore = Math.max(
-                ...Object.values(pathResult?.heuristic_scores || {})
+              const scores = Object.values(pathResult?.heuristic_scores || {});
+              const maxScore = Math.max(...scores);
+              const minScore = Math.min(...scores);
+              return getHeuristicColor(
+                node.heuristicScore - minScore,
+                maxScore - minScore
               );
-              return getHeuristicColor(node.heuristicScore, maxScore);
             }
             return node.isFinalPath ? "red" : "blue";
           }}
           linkColor={(link: GraphLink) => {
             if (method === "astar" && link.heuristicScore !== undefined) {
-              const maxScore = Math.max(
-                ...Object.values(pathResult?.heuristic_scores || {})
+              const scores = Object.values(pathResult?.heuristic_scores || {});
+              const maxScore = Math.max(...scores);
+              const minScore = Math.min(...scores);
+              return getHeuristicColor(
+                link.heuristicScore - minScore,
+                maxScore - minScore
               );
-              return getHeuristicColor(link.heuristicScore, maxScore);
             }
             return link.isFinalPath ? "red" : "#cccccc";
           }}
