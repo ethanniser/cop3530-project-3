@@ -37,52 +37,6 @@ void AdjacencyList::addEdge(NodeID from, NodeID to)
     }
 }
 
-PathResult AdjacencyList::findPathDFS(NodeID source, NodeID destination)
-{
-    PathResult result;
-    std::unordered_map<NodeID, NodeID> parent;
-    std::stack<NodeID> stack;
-    std::unordered_set<NodeID> visited;
-
-    stack.push(source);
-    visited.insert(source);
-    parent[source] = -1; //mark source as having no parent
-
-    while(!stack.empty())
-    {
-        NodeID current = stack.top();
-        stack.pop();
-
-        result.exploredPath.push_back(current);
-
-        if(current == destination)
-        {
-            NodeID node = destination;
-            while(node != -1)
-            {
-                result.finalPath.push_back(node);
-                node = parent[node];
-            }
-            std::reverse(result.finalPath.begin(), result.finalPath.end());
-            return result;
-        }
-
-        for(NodeID neighbor : map[current])
-        {
-            if(visited.find(neighbor) == visited.end())
-            {
-                visited.insert(neighbor);
-                parent[neighbor] = current;
-                stack.push(neighbor);
-            }
-        }
-
-    }
-
-    // If we get here, no path was found
-    return result;
-}
-
 PathResult AdjacencyList::findPathBFS(NodeID source, NodeID destination)
 {
     PathResult result;
