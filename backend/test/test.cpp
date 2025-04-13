@@ -89,6 +89,8 @@ TEST_CASE("BFS pathfinding")
         REQUIRE(result.finalPath.size() == 2);
         REQUIRE(result.finalPath[0] == 1);
         REQUIRE(result.finalPath[1] == 2);
+        REQUIRE(result.parents.at(1) == -1); // Source has no parent
+        REQUIRE(result.parents.at(2) == 1);
     }
 
     SECTION("Longer path")
@@ -97,12 +99,19 @@ TEST_CASE("BFS pathfinding")
         REQUIRE(result.finalPath.size() == 5);
         REQUIRE(result.finalPath[0] == 1);
         REQUIRE(result.finalPath[4] == 5);
+        REQUIRE(result.parents.at(1) == -1);
+        REQUIRE(result.parents.at(2) == 1);
+        REQUIRE(result.parents.at(3) == 2);
+        REQUIRE(result.parents.at(4) == 3);
+        REQUIRE(result.parents.at(5) == 4);
     }
 
     SECTION("No path")
     {
         auto result = al.findPathBFS(1, 100);
         REQUIRE(result.finalPath.empty());
+        REQUIRE(!result.parents.empty());    // Should still contain explored nodes
+        REQUIRE(result.parents.at(1) == -1); // Source parent is still -1
     }
 
     cleanupTestData();
