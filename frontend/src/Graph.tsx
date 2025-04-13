@@ -82,50 +82,48 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
     // Create nodes and calculate their levels
     const nodes: GraphNode[] = [];
     const nodeSet = new Set<number>();
-    const nodeLevels = new Map<number, number>();
 
-    // Calculate levels for each node based on BFS parent relationships
-    const calculateLevels = (nodeId: number, level: number) => {
-      nodeLevels.set(nodeId, level);
-      for (const [child, parent] of Object.entries(pathResult.parents)) {
-        if (parent === nodeId) {
-          calculateLevels(Number(child), level + 1);
-        }
-      }
-    };
+    // First, ensure we have all nodes that appear in the parent relationships
+    for (const [childStr, parent] of Object.entries(pathResult.parents)) {
+      const child = parseInt(childStr);
 
-    // Start from source node (level 0)
-    calculateLevels(source!, 0);
-
-    // Create nodes with level information
-    for (const id of pathResult.exploredPath) {
-      if (!nodeSet.has(id)) {
+      // Add child node if not already added
+      if (!nodeSet.has(child)) {
         nodes.push({
-          id,
-          isFinalPath: finalPathNodes.has(id),
-          level: nodeLevels.get(id) || 0,
+          id: child,
+          isFinalPath: finalPathNodes.has(child),
         });
-        nodeSet.add(id);
+        nodeSet.add(child);
+      }
+
+      // Add parent node if not already added and it's not -1 (source's parent)
+      if (parent !== -1 && !nodeSet.has(parent)) {
+        nodes.push({
+          id: parent,
+          isFinalPath: finalPathNodes.has(parent),
+        });
+        nodeSet.add(parent);
       }
     }
 
     // Create links based on parent relationships
     const links: GraphLink[] = [];
-    for (const [child, parent] of Object.entries(pathResult.parents)) {
+    for (const [childStr, parent] of Object.entries(pathResult.parents)) {
       if (parent !== -1) {
         // Skip source node which has no parent
+        const child = parseInt(childStr);
         const isInFinalPath =
-          finalPathNodes.has(Number(child)) && finalPathNodes.has(parent);
+          finalPathNodes.has(child) && finalPathNodes.has(parent);
         links.push({
           source: parent,
-          target: Number(child),
+          target: child,
           isFinalPath: isInFinalPath,
         });
       }
     }
 
     return { nodes, links };
-  }, [pathResult, source]);
+  }, [pathResult]);
 
   if (!source || !destination) {
     return (
