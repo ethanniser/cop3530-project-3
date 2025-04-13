@@ -36,8 +36,16 @@ function App() {
                 onChange={(e) =>
                   setSource(e.target.value ? Number(e.target.value) : null)
                 }
-                className="border p-2 rounded"
+                className="border p-2 rounded pr-8"
               />
+              {source !== null && (
+                <button
+                  onClick={() => setSource(null)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              )}
               <datalist id="sourceNodes">
                 {exampleNodes.map((nodeId) => (
                   <option key={nodeId} value={nodeId} />
@@ -53,8 +61,16 @@ function App() {
                 onChange={(e) =>
                   setDestination(e.target.value ? Number(e.target.value) : null)
                 }
-                className="border p-2 rounded"
+                className="border p-2 rounded pr-8"
               />
+              {destination !== null && (
+                <button
+                  onClick={() => setDestination(null)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              )}
               <datalist id="destinationNodes">
                 {exampleNodes.map((nodeId) => (
                   <option key={nodeId} value={nodeId} />
