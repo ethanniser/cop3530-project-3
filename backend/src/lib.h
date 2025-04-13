@@ -42,6 +42,8 @@ public:
     PathResult findPathAStar(NodeID source, NodeID destination, FeaturesStore &features);
 
     std::unordered_map<NodeID, std::unordered_set<NodeID>> getMap();
+    size_t getNodeCount() const;
+    size_t getEdgeCount() const;
 
 private:
     std::unordered_map<NodeID, std::unordered_set<NodeID>> map;

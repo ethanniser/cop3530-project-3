@@ -26,6 +26,19 @@
  *     "parents": {string: int}, - Maps each node ID to its parent node ID in the search tree (-1 for source)
  *     "sharedFeatures": [string], - The features that are shared between the source and destination nodes
  *   }
+ *
+ * /stats
+ * Description: Returns statistics about the graph, including total number of nodes and edges.
+ * Method: GET
+ * No query parameters required.
+ *
+ * Response:
+ *   200 OK
+ *   Content-Type: application/json
+ *   {
+ *     "nodes": int, - Total number of nodes in the graph
+ *     "edges": int  - Total number of edges in the graph (each bidirectional edge counted once)
+ *   }
  */
 
 crow::response addCorsHeaders(crow::response &&response)
@@ -125,9 +138,13 @@ int main()
   std::cout << "Graph loaded successfully." << std::endl;
   crow::SimpleApp app;
 
-  CROW_ROUTE(app, "/")
-  ([]()
-   { return addCorsHeaders(crow::response("Hello world!")); });
+  CROW_ROUTE(app, "/stats")
+      .methods("GET"_method)([&adjacencyList](const crow::request &)
+                             {
+          crow::json::wvalue response;
+          response["nodes"] = adjacencyList.getNodeCount();
+          response["edges"] = adjacencyList.getEdgeCount();
+          return addCorsHeaders(crow::response(std::move(response))); });
 
   CROW_ROUTE(app, "/path")
   ([&adjacencyList, &featuresStore](const crow::request &req)
@@ -165,5 +182,9 @@ int main()
       .methods("OPTIONS"_method)([]()
                                  { return addCorsHeaders(crow::response(200)); });
 
-  app.port(8080).concurrency(4).run();
+  CROW_ROUTE(app, "/stats")
+      .methods("OPTIONS"_method)([]()
+                                 { return addCorsHeaders(crow::response(200)); });
+
+  app.port(8080).run();
 }

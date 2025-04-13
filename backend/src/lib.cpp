@@ -341,3 +341,18 @@ FeaturesStore FeaturesStore::loadFromCache(std::string path)
 
     return fs;
 }
+
+size_t AdjacencyList::getNodeCount() const
+{
+    return map.size();
+}
+
+size_t AdjacencyList::getEdgeCount() const
+{
+    size_t total = 0;
+    for (const auto &[_, neighbors] : map)
+    {
+        total += neighbors.size();
+    }
+    return total / 2; // Divide by 2 since each edge is counted twice (once for each direction)
+}

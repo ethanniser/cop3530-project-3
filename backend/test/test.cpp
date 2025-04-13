@@ -226,3 +226,22 @@ TEST_CASE("A* shared features with source")
 
     cleanupTestData();
 }
+
+TEST_CASE("Graph statistics")
+{
+    createTestData();
+
+    SECTION("Node and edge counts")
+    {
+        auto al = AdjacencyList::loadEdgesFromDirectory("test_data");
+
+        // We have 10 nodes (1-10) in our test data
+        REQUIRE(al.getNodeCount() == 10);
+
+        // We have 9 edges in our test data (1-2, 2-3, ..., 9-10)
+        // Each edge is counted once despite being bidirectional
+        REQUIRE(al.getEdgeCount() == 9);
+    }
+
+    cleanupTestData();
+}
