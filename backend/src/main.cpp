@@ -2,6 +2,8 @@
 #include "lib.h"
 #include <sstream>
 #include <vector>
+#include <chrono>
+#include <iomanip>
 
 /**
  * API:
@@ -18,6 +20,7 @@
  *   {
  *     "finalPath": [int], - The path from the source to the destination node, in order
  *     "exploredPath": [int], - The nodes that were explored during the search, in order
+ *     "parents": {string: int}, - Maps each node ID to its parent node ID in the search tree (-1 for source)
  *     "sharedFeatures": [string], - The features that are shared between the source and destination nodes
  *   }
  */
@@ -33,9 +36,34 @@ crow::response addCorsHeaders(crow::response &&response)
 int main()
 {
   std::cout << "Loading graph..." << std::endl;
+  auto start = std::chrono::high_resolution_clock::now();
   auto adjacencyList = AdjacencyList::loadEdgesFromDirectory("../data/twitter");
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = end - start;
+  std::cout << "Graph loaded in " << std::fixed << std::setprecision(2) << elapsed.count() << " seconds" << std::endl;
+
   std::cout << "Loading features..." << std::endl;
-  auto featuresStore = FeaturesStore::loadFeaturesFromDirectory("../data/twitter");
+  start = std::chrono::high_resolution_clock::now();
+
+  FeaturesStore featuresStore;
+  std::string cache_path = "./.cache/features";
+  try
+  {
+    featuresStore = FeaturesStore::loadFromCache(cache_path);
+    std::cout << "Loaded features from cache" << std::endl;
+  }
+  catch (const std::exception &e)
+  {
+    std::cout << "Cache not found or invalid, loading from source files..." << std::endl;
+    featuresStore = FeaturesStore::loadFeaturesFromDirectory("../data/twitter");
+    std::cout << "Saving features to cache..." << std::endl;
+    featuresStore.saveToCache(cache_path);
+  }
+
+  end = std::chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  std::cout << "Features loaded in " << std::fixed << std::setprecision(2) << elapsed.count() << " seconds" << std::endl;
+
   std::cout << "Graph loaded successfully." << std::endl;
   crow::SimpleApp app;
 
@@ -79,10 +107,17 @@ int main()
     response["finalPath"] = result.finalPath;
     response["exploredPath"] = result.exploredPath;
     
+    // Convert parents map to JSON object
+    crow::json::wvalue parents_obj;
+    for (const auto& [child, parent] : result.parents) {
+        parents_obj[std::to_string(child)] = parent;
+    }
+    response["parents"] = std::move(parents_obj);
+    
     // Convert shared features to JSON array
     crow::json::wvalue::list shared_features_list;
     for (const auto& feature : shared_features) {
-      shared_features_list.push_back(crow::json::wvalue(feature));
+        shared_features_list.push_back(crow::json::wvalue(feature));
     }
     response["sharedFeatures"] = std::move(shared_features_list);
 

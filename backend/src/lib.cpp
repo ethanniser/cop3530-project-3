@@ -64,6 +64,9 @@ PathResult AdjacencyList::findPathBFS(NodeID source, NodeID destination)
                 node = parent[node];
             }
             std::reverse(result.finalPath.begin(), result.finalPath.end());
+
+            // Store parent information
+            result.parents = parent;
             return result;
         }
 
@@ -78,7 +81,8 @@ PathResult AdjacencyList::findPathBFS(NodeID source, NodeID destination)
         }
     }
 
-    // If we get here, no path was found
+    // Store parent information even if path not found
+    result.parents = parent;
     return result;
 }
 
@@ -251,4 +255,74 @@ std::unordered_set<std::string> FeaturesStore::sharedFeatures(NodeID node1, Node
 std::unordered_map<NodeID, std::unordered_set<NodeID>> AdjacencyList::getMap()
 {
     return map;
+}
+
+void FeaturesStore::saveToCache(std::string path)
+{
+    std::ofstream out(path, std::ios::binary);
+    if (!out)
+    {
+        throw std::runtime_error("Failed to open cache file for writing");
+    }
+
+    // Write number of nodes
+    size_t num_nodes = features.size();
+    out.write(reinterpret_cast<const char *>(&num_nodes), sizeof(num_nodes));
+
+    for (const auto &[node, node_features] : features)
+    {
+        // Write node ID
+        out.write(reinterpret_cast<const char *>(&node), sizeof(node));
+
+        // Write number of features for this node
+        size_t num_features = node_features.size();
+        out.write(reinterpret_cast<const char *>(&num_features), sizeof(num_features));
+
+        // Write each feature
+        for (const auto &feature : node_features)
+        {
+            size_t feature_size = feature.size();
+            out.write(reinterpret_cast<const char *>(&feature_size), sizeof(feature_size));
+            out.write(feature.c_str(), feature_size);
+        }
+    }
+}
+
+FeaturesStore FeaturesStore::loadFromCache(std::string path)
+{
+    FeaturesStore fs;
+    std::ifstream in(path, std::ios::binary);
+    if (!in)
+    {
+        throw std::runtime_error("Failed to open cache file for reading");
+    }
+
+    // Read number of nodes
+    size_t num_nodes;
+    in.read(reinterpret_cast<char *>(&num_nodes), sizeof(num_nodes));
+
+    for (size_t i = 0; i < num_nodes; ++i)
+    {
+        // Read node ID
+        NodeID node;
+        in.read(reinterpret_cast<char *>(&node), sizeof(node));
+
+        // Read number of features
+        size_t num_features;
+        in.read(reinterpret_cast<char *>(&num_features), sizeof(num_features));
+
+        // Read each feature
+        for (size_t j = 0; j < num_features; ++j)
+        {
+            size_t feature_size;
+            in.read(reinterpret_cast<char *>(&feature_size), sizeof(feature_size));
+
+            std::string feature(feature_size, '\0');
+            in.read(&feature[0], feature_size);
+
+            fs.addFeature(node, feature);
+        }
+    }
+
+    return fs;
 }

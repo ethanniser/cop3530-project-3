@@ -5,12 +5,15 @@ import ForceGraph2D from "react-force-graph-2d";
 interface PathResult {
   finalPath: number[];
   exploredPath: number[];
+  parents: { [key: number]: number };
   sharedFeatures: string[];
 }
 
 interface GraphNode {
   id: number;
   isFinalPath: boolean;
+  level?: number;
+  x?: number;
 }
 
 interface GraphLink {
@@ -76,43 +79,53 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
     // Create a set of nodes in the final path for quick lookup
     const finalPathNodes = new Set(pathResult.finalPath);
 
-    // Create nodes from both paths
+    // Create nodes and calculate their levels
     const nodes: GraphNode[] = [];
     const nodeSet = new Set<number>();
+    const nodeLevels = new Map<number, number>();
 
-    // Add all nodes from explored path first
+    // Calculate levels for each node based on BFS parent relationships
+    const calculateLevels = (nodeId: number, level: number) => {
+      nodeLevels.set(nodeId, level);
+      for (const [child, parent] of Object.entries(pathResult.parents)) {
+        if (parent === nodeId) {
+          calculateLevels(Number(child), level + 1);
+        }
+      }
+    };
+
+    // Start from source node (level 0)
+    calculateLevels(source!, 0);
+
+    // Create nodes with level information
     for (const id of pathResult.exploredPath) {
       if (!nodeSet.has(id)) {
         nodes.push({
           id,
           isFinalPath: finalPathNodes.has(id),
+          level: nodeLevels.get(id) || 0,
         });
         nodeSet.add(id);
       }
     }
 
+    // Create links based on parent relationships
     const links: GraphLink[] = [];
-
-    // Add links between consecutive nodes in explored path
-    for (let i = 0; i < pathResult.exploredPath.length - 1; i++) {
-      links.push({
-        source: pathResult.exploredPath[i],
-        target: pathResult.exploredPath[i + 1],
-        isFinalPath: false,
-      });
-    }
-
-    // Add links for the final path
-    for (let i = 0; i < pathResult.finalPath.length - 1; i++) {
-      links.push({
-        source: pathResult.finalPath[i],
-        target: pathResult.finalPath[i + 1],
-        isFinalPath: true,
-      });
+    for (const [child, parent] of Object.entries(pathResult.parents)) {
+      if (parent !== -1) {
+        // Skip source node which has no parent
+        const isInFinalPath =
+          finalPathNodes.has(Number(child)) && finalPathNodes.has(parent);
+        links.push({
+          source: parent,
+          target: Number(child),
+          isFinalPath: isInFinalPath,
+        });
+      }
     }
 
     return { nodes, links };
-  }, [pathResult]);
+  }, [pathResult, source]);
 
   if (!source || !destination) {
     return (
@@ -164,6 +177,9 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
               linkWidth={(link) => (link.isFinalPath ? 3 : 1)}
               linkDirectionalParticles={(link) => (link.isFinalPath ? 4 : 0)}
               linkDirectionalParticleWidth={2}
+              dagMode="td"
+              dagLevelDistance={100}
+              d3VelocityDecay={0.3}
             />
           </div>
         </>
