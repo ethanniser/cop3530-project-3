@@ -33,7 +33,8 @@ function App() {
         <header className="bg-white shadow">
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold text-gray-900">
-              Graph Path Finder
+              DSA Project 3 - Pathfinding Connections Between Twitter Users (BFS
+              vs A*)
             </h1>
           </div>
         </header>

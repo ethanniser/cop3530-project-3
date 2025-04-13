@@ -61,11 +61,33 @@ const getHeuristicColor = (score: number, maxScore: number) => {
 };
 
 const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
-  const { data: pathResult } = useQuery({
-    queryKey: ["path", source, destination, method],
-    queryFn: () => fetchPath(source!, destination!, method),
+  const { data: bfsResult } = useQuery({
+    queryKey: ["path", source, destination, "bfs"],
+    queryFn: () => fetchPath(source!, destination!, "bfs"),
     enabled: !!source && !!destination,
   });
+
+  const { data: astarResult } = useQuery({
+    queryKey: ["path", source, destination, "astar"],
+    queryFn: () => fetchPath(source!, destination!, "astar"),
+    enabled: !!source && !!destination,
+  });
+
+  const pathResult = method === "bfs" ? bfsResult : astarResult;
+
+  const getComparisonText = (currentCount: number, otherCount: number) => {
+    const diff = ((currentCount - otherCount) / otherCount) * 100;
+    if (diff > 0) {
+      return `(${diff.toFixed(0)}% increase compared to ${
+        method === "bfs" ? "A*" : "BFS"
+      })`;
+    } else if (diff < 0) {
+      return `(${Math.abs(diff).toFixed(0)}% decrease compared to ${
+        method === "bfs" ? "A*" : "BFS"
+      })`;
+    }
+    return `(same as ${method === "bfs" ? "A*" : "BFS"})`;
+  };
 
   const graphRef = React.useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = React.useState({ width: 0, height: 0 });
@@ -151,7 +173,7 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
             Enter source and destination IDs to find a path
           </p>
         </div>
-      ) : pathResult ? (
+      ) : pathResult && bfsResult && astarResult ? (
         <div className="p-4 bg-white rounded-lg shadow mb-4">
           <h3 className="text-lg font-bold mb-2">Path Result</h3>
           <div className="space-y-2">
@@ -161,7 +183,15 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
             </p>
             <p>
               <span className="font-semibold">Explored Nodes:</span>{" "}
-              {pathResult.exploredPath.length}
+              {pathResult.exploredPath.length}{" "}
+              <span className="text-gray-500">
+                {getComparisonText(
+                  pathResult.exploredPath.length,
+                  method === "bfs"
+                    ? astarResult.exploredPath.length
+                    : bfsResult.exploredPath.length
+                )}
+              </span>
             </p>
             <p>
               <span className="font-semibold">Shared Features:</span>{" "}
