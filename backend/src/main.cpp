@@ -139,8 +139,8 @@ int main()
   crow::SimpleApp app;
 
   CROW_ROUTE(app, "/stats")
-      .methods("GET"_method)([&adjacencyList](const crow::request &)
-                             {
+  ([&adjacencyList](const crow::request &)
+   {
           crow::json::wvalue response;
           response["nodes"] = adjacencyList.getNodeCount();
           response["edges"] = adjacencyList.getEdgeCount();
