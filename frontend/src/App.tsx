@@ -4,6 +4,12 @@ import Graph from "./Graph";
 
 const queryClient = new QueryClient();
 
+// Example node IDs
+const exampleNodes = [
+  59588845, 69592091, 250178329, 260769396, 276577539, 279787626, 314316607,
+  447688115, 461410856, 529007327,
+];
+
 function App() {
   const [source, setSource] = useState<number | null>(null);
   const [destination, setDestination] = useState<number | null>(null);
@@ -21,20 +27,40 @@ function App() {
         </header>
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="mb-4 flex gap-4">
-            <input
-              type="number"
-              placeholder="Source node"
-              value={source || ""}
-              onChange={(e) => setSource(Number(e.target.value))}
-              className="border p-2 rounded"
-            />
-            <input
-              type="number"
-              placeholder="Destination node"
-              value={destination || ""}
-              onChange={(e) => setDestination(Number(e.target.value))}
-              className="border p-2 rounded"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                list="sourceNodes"
+                placeholder="Source node"
+                value={source || ""}
+                onChange={(e) =>
+                  setSource(e.target.value ? Number(e.target.value) : null)
+                }
+                className="border p-2 rounded"
+              />
+              <datalist id="sourceNodes">
+                {exampleNodes.map((nodeId) => (
+                  <option key={nodeId} value={nodeId} />
+                ))}
+              </datalist>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                list="destinationNodes"
+                placeholder="Destination node"
+                value={destination || ""}
+                onChange={(e) =>
+                  setDestination(e.target.value ? Number(e.target.value) : null)
+                }
+                className="border p-2 rounded"
+              />
+              <datalist id="destinationNodes">
+                {exampleNodes.map((nodeId) => (
+                  <option key={nodeId} value={nodeId} />
+                ))}
+              </datalist>
+            </div>
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value as "bfs" | "astar")}
