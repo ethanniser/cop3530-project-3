@@ -10,10 +10,22 @@ const exampleNodes = [
   447688115, 461410856, 529007327,
 ];
 
+// Example pairs for quick loading
+const examples = [
+  { source: 250178329, destination: 529007327 },
+  { source: 314316607, destination: 447688115 },
+  { source: 69592091, destination: 461410856 },
+];
+
 function App() {
   const [source, setSource] = useState<number | null>(null);
   const [destination, setDestination] = useState<number | null>(null);
   const [method, setMethod] = useState<"bfs" | "astar">("bfs");
+
+  const loadExample = (index: number) => {
+    setSource(examples[index].source);
+    setDestination(examples[index].destination);
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -26,7 +38,7 @@ function App() {
           </div>
         </header>
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="mb-4 flex gap-4">
+          <div className="mb-4 flex gap-4 items-center flex-wrap">
             <div className="relative">
               <input
                 type="number"
@@ -85,6 +97,17 @@ function App() {
               <option value="bfs">BFS</option>
               <option value="astar">A*</option>
             </select>
+            <div className="flex gap-2">
+              {[0, 1, 2].map((i) => (
+                <button
+                  key={i}
+                  onClick={() => loadExample(i)}
+                  className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  Load Example {i + 1}
+                </button>
+              ))}
+            </div>
           </div>
 
           <Suspense
