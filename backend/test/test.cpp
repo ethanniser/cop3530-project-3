@@ -172,3 +172,31 @@ TEST_CASE("Path exploration")
 
     cleanupTestData();
 }
+
+TEST_CASE("A* heuristic scores")
+{
+    createTestData();
+    auto al = AdjacencyList::loadEdgesFromDirectory("test_data");
+    auto fs = FeaturesStore::loadFeaturesFromDirectory("test_data");
+
+    SECTION("F-scores are computed")
+    {
+        auto result = al.findPathAStar(1, 4, fs);
+
+        // Check that f-scores exist for all explored nodes
+        for (const auto &node : result.exploredPath)
+        {
+            REQUIRE(result.heuristic_scores.find(node) != result.heuristic_scores.end());
+        }
+
+        // Node 4 (destination) has 2 features total
+        // Node 1 has 1 shared feature, so heuristic = 2 - 1 = 1
+        // g=0 (start node), h=1, so f=1
+        REQUIRE(result.heuristic_scores.at(1) == 1);
+
+        // For destination: g=3 (path length), h=0 (all features shared), so f=3
+        REQUIRE(result.heuristic_scores.at(4) == 3);
+    }
+
+    cleanupTestData();
+}

@@ -7,11 +7,13 @@ interface PathResult {
   exploredPath: number[];
   parents: { [key: number]: number };
   sharedFeatures: string[];
+  heuristic_scores: { [key: number]: number };
 }
 
 interface GraphNode {
   id: number;
   isFinalPath: boolean;
+  heuristicScore?: number;
   level?: number;
   x?: number;
 }
@@ -20,6 +22,7 @@ interface GraphLink {
   source: number;
   target: number;
   isFinalPath: boolean;
+  heuristicScore?: number;
 }
 
 interface GraphData {
@@ -45,6 +48,14 @@ const fetchPath = async (
     throw new Error("Network response was not ok");
   }
   return response.json();
+};
+
+const getHeuristicColor = (score: number, maxScore: number) => {
+  // Convert score to a color from blue (low) to red (high)
+  const normalizedScore = score / maxScore;
+  const r = Math.round(255 * normalizedScore);
+  const b = Math.round(255 * (1 - normalizedScore));
+  return `rgb(${r}, 0, ${b})`;
 };
 
 const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
@@ -79,6 +90,11 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
     // Create a set of nodes in the final path for quick lookup
     const finalPathNodes = new Set(pathResult.finalPath);
 
+    // Find max heuristic score for normalization
+    const maxHeuristicScore = Math.max(
+      ...Object.values(pathResult.heuristic_scores || {})
+    );
+
     // Create nodes and calculate their levels
     const nodes: GraphNode[] = [];
     const nodeSet = new Set<number>();
@@ -92,6 +108,7 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
         nodes.push({
           id: child,
           isFinalPath: finalPathNodes.has(child),
+          heuristicScore: pathResult.heuristic_scores?.[child],
         });
         nodeSet.add(child);
       }
@@ -101,6 +118,7 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
         nodes.push({
           id: parent,
           isFinalPath: finalPathNodes.has(parent),
+          heuristicScore: pathResult.heuristic_scores?.[parent],
         });
         nodeSet.add(parent);
       }
@@ -118,6 +136,7 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
           source: parent,
           target: child,
           isFinalPath: isInFinalPath,
+          heuristicScore: pathResult.heuristic_scores?.[child],
         });
       }
     }
@@ -162,11 +181,31 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
           graphData={graphData}
           width={dimensions.width}
           height={dimensions.height}
-          nodeLabel={(node: GraphNode) => `Node ${node.id}`}
-          nodeColor={(node: GraphNode) => (node.isFinalPath ? "red" : "blue")}
-          linkColor={(link: GraphLink) =>
-            link.isFinalPath ? "red" : "#cccccc"
+          nodeLabel={(node: GraphNode) =>
+            `Node ${node.id}${
+              node.heuristicScore !== undefined
+                ? ` (h=${node.heuristicScore})`
+                : ""
+            }`
           }
+          nodeColor={(node: GraphNode) => {
+            if (method === "astar" && node.heuristicScore !== undefined) {
+              const maxScore = Math.max(
+                ...Object.values(pathResult?.heuristic_scores || {})
+              );
+              return getHeuristicColor(node.heuristicScore, maxScore);
+            }
+            return node.isFinalPath ? "red" : "blue";
+          }}
+          linkColor={(link: GraphLink) => {
+            if (method === "astar" && link.heuristicScore !== undefined) {
+              const maxScore = Math.max(
+                ...Object.values(pathResult?.heuristic_scores || {})
+              );
+              return getHeuristicColor(link.heuristicScore, maxScore);
+            }
+            return link.isFinalPath ? "red" : "#cccccc";
+          }}
           nodeRelSize={8}
           linkWidth={(link) => (link.isFinalPath ? 3 : 1)}
           linkDirectionalParticles={(link) => (link.isFinalPath ? 4 : 0)}

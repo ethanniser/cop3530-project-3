@@ -95,6 +95,9 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
     std::unordered_set<NodeID> closed_set;
     std::unordered_set<NodeID> open_set;
 
+    // Get the total number of features the destination has as our reference
+    double max_features = features.getFeatures(destination).size();
+
     // Priority queue with custom comparator
     auto cmp = [&f_score](NodeID a, NodeID b)
     { return f_score[a] > f_score[b]; };
@@ -102,7 +105,11 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
 
     // Initialize scores
     g_score[source] = 0;
-    f_score[source] = features.sharedFeatures(source, destination).size();
+    // Heuristic is now the difference between max possible shared features and actual shared features
+    double shared = features.sharedFeatures(source, destination).size();
+    double heuristic = max_features - shared; // This ensures closer nodes have lower scores
+    f_score[source] = g_score[source] + heuristic;
+    result.heuristic_scores[source] = f_score[source];
     parent[source] = -1;
     open_set.insert(source);
     open_queue.push(source);
@@ -123,6 +130,7 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
                 node = parent[node];
             }
             std::reverse(result.finalPath.begin(), result.finalPath.end());
+            result.parents = parent;
             return result;
         }
 
@@ -149,12 +157,16 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
 
             parent[neighbor] = current;
             g_score[neighbor] = tentative_g_score;
-            f_score[neighbor] = g_score[neighbor] + features.sharedFeatures(neighbor, destination).size();
+            shared = features.sharedFeatures(neighbor, destination).size();
+            heuristic = max_features - shared; // Lower score means closer to destination
+            f_score[neighbor] = g_score[neighbor] + heuristic;
+            result.heuristic_scores[neighbor] = f_score[neighbor];
             open_queue.push(neighbor);
         }
     }
 
     // If we get here, no path was found
+    result.parents = parent;
     return result;
 }
 

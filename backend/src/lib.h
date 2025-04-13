@@ -12,7 +12,8 @@ struct PathResult
 {
     std::vector<NodeID> finalPath;
     std::vector<NodeID> exploredPath;
-    std::unordered_map<NodeID, NodeID> parents; // Maps node -> parent
+    std::unordered_map<NodeID, NodeID> parents;          // Maps node -> parent
+    std::unordered_map<NodeID, double> heuristic_scores; // Maps node -> heuristic score
 };
 
 class FeaturesStore
