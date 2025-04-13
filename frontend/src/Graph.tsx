@@ -8,12 +8,14 @@ interface PathResult {
   parents: { [key: number]: number };
   sharedFeatures: string[];
   heuristic_scores: { [key: number]: number };
+  shared_with_source: { [key: number]: number };
 }
 
 interface GraphNode {
   id: number;
   isFinalPath: boolean;
   heuristicScore?: number;
+  sharedWithSource?: number;
   level?: number;
   x?: number;
 }
@@ -104,6 +106,7 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
           id: child,
           isFinalPath: finalPathNodes.has(child),
           heuristicScore: pathResult.heuristic_scores?.[child],
+          sharedWithSource: pathResult.shared_with_source?.[child],
         });
         nodeSet.add(child);
       }
@@ -114,6 +117,7 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
           id: parent,
           isFinalPath: finalPathNodes.has(parent),
           heuristicScore: pathResult.heuristic_scores?.[parent],
+          sharedWithSource: pathResult.shared_with_source?.[parent],
         });
         nodeSet.add(parent);
       }
@@ -187,6 +191,10 @@ const Graph: React.FC<GraphProps> = ({ source, destination, method }) => {
             `Node ${node.id}${
               node.heuristicScore !== undefined
                 ? ` (cost=${node.heuristicScore.toFixed(2)})`
+                : ""
+            }${
+              node.sharedWithSource !== undefined
+                ? `\nShared features with source: ${node.sharedWithSource}`
                 : ""
             }`
           }

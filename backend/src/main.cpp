@@ -4,6 +4,9 @@
 #include <vector>
 #include <chrono>
 #include <iomanip>
+#include <iostream>
+#include <string>
+#include <unordered_map>
 
 /**
  * API:
@@ -31,6 +34,61 @@ crow::response addCorsHeaders(crow::response &&response)
   response.add_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.add_header("Access-Control-Allow-Headers", "Content-Type");
   return std::move(response);
+}
+
+// Convert PathResult to JSON
+crow::json::wvalue pathResultToJson(const PathResult &result, FeaturesStore &features, NodeID source, NodeID destination)
+{
+  crow::json::wvalue::list finalPath;
+  for (const auto &node : result.finalPath)
+  {
+    finalPath.push_back(node);
+  }
+
+  crow::json::wvalue::list exploredPath;
+  for (const auto &node : result.exploredPath)
+  {
+    exploredPath.push_back(node);
+  }
+
+  crow::json::wvalue::object parents;
+  for (const auto &[child, parent] : result.parents)
+  {
+    parents[std::to_string(child)] = parent;
+  }
+
+  crow::json::wvalue::object heuristicScores;
+  for (const auto &[node, score] : result.heuristic_scores)
+  {
+    heuristicScores[std::to_string(node)] = score;
+  }
+
+  crow::json::wvalue::object sharedWithSource;
+  for (const auto &[node, count] : result.shared_with_source)
+  {
+    sharedWithSource[std::to_string(node)] = count;
+  }
+
+  std::vector<std::string> sharedFeatures;
+  if (source != -1 && destination != -1)
+  {
+    auto features_set = features.sharedFeatures(source, destination);
+    sharedFeatures = std::vector<std::string>(features_set.begin(), features_set.end());
+  }
+
+  crow::json::wvalue::list sharedFeaturesList;
+  for (const auto &feature : sharedFeatures)
+  {
+    sharedFeaturesList.push_back(feature);
+  }
+
+  return crow::json::wvalue{
+      {"finalPath", std::move(finalPath)},
+      {"exploredPath", std::move(exploredPath)},
+      {"parents", std::move(parents)},
+      {"heuristic_scores", std::move(heuristicScores)},
+      {"shared_with_source", std::move(sharedWithSource)},
+      {"sharedFeatures", std::move(sharedFeaturesList)}};
 }
 
 int main()
@@ -99,29 +157,8 @@ int main()
       return addCorsHeaders(crow::response(400, "Invalid method. Use 'bfs' or 'astar'."));
     }
 
-    // Get shared features
-    auto shared_features = featuresStore.sharedFeatures(source, destination);
-    
-    // Create response
-    crow::json::wvalue response;
-    response["finalPath"] = result.finalPath;
-    response["exploredPath"] = result.exploredPath;
-    
-    // Convert parents map to JSON object
-    crow::json::wvalue parents_obj;
-    for (const auto& [child, parent] : result.parents) {
-        parents_obj[std::to_string(child)] = parent;
-    }
-    response["parents"] = std::move(parents_obj);
-    
-    // Convert shared features to JSON array
-    crow::json::wvalue::list shared_features_list;
-    for (const auto& feature : shared_features) {
-        shared_features_list.push_back(crow::json::wvalue(feature));
-    }
-    response["sharedFeatures"] = std::move(shared_features_list);
-
-    return addCorsHeaders(crow::response{response}); });
+    auto json = pathResultToJson(result, featuresStore, source, destination);
+    return addCorsHeaders(crow::response{json}); });
 
   // Add OPTIONS handler for CORS preflight requests
   CROW_ROUTE(app, "/path")

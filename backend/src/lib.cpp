@@ -109,10 +109,11 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
     double heuristic = max_features - shared;
     f_score[source] = g_score[source] + heuristic;
     result.heuristic_scores[source] = f_score[source];
+    result.shared_with_source[source] = features.getFeatures(source).size(); // Source shares all its features with itself
     parent[source] = -1;
     open_set.insert(source);
     open_queue.push(source);
-    result.exploredPath.push_back(source); // Add source to explored path
+    result.exploredPath.push_back(source);
 
     while (!open_queue.empty())
     {
@@ -148,7 +149,9 @@ PathResult AdjacencyList::findPathAStar(NodeID source, NodeID destination, Featu
             if (open_set.find(neighbor) == open_set.end())
             {
                 open_set.insert(neighbor);
-                result.exploredPath.push_back(neighbor); // Add newly discovered nodes to explored path
+                result.exploredPath.push_back(neighbor);
+                // Calculate shared features with source for newly discovered nodes
+                result.shared_with_source[neighbor] = features.sharedFeatures(source, neighbor).size();
             }
             else if (tentative_g_score >= g_score[neighbor])
             {

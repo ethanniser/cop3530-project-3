@@ -200,3 +200,29 @@ TEST_CASE("A* heuristic scores")
 
     cleanupTestData();
 }
+
+TEST_CASE("A* shared features with source")
+{
+    createTestData();
+    auto al = AdjacencyList::loadEdgesFromDirectory("test_data");
+    auto fs = FeaturesStore::loadFeaturesFromDirectory("test_data");
+
+    SECTION("Shared features with source are computed")
+    {
+        auto result = al.findPathAStar(1, 4, fs);
+
+        // Check that shared features exist for all explored nodes
+        for (const auto &node : result.exploredPath)
+        {
+            REQUIRE(result.shared_with_source.find(node) != result.shared_with_source.end());
+        }
+
+        // Source node (1) should share all its features with itself (1 feature)
+        REQUIRE(result.shared_with_source.at(1) == 1);
+
+        // Node 4 shares feature1 with source node 1
+        REQUIRE(result.shared_with_source.at(4) == 1);
+    }
+
+    cleanupTestData();
+}
