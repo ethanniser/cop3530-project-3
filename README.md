@@ -2,6 +2,8 @@
 
 ## Getting Started
 
+Required packages that need to be available on your system: `cmake`, `bun`, and `just`
+
 ### Installing `just`
 
 This project has a `justfile`, which just provides some shorthands for running common commands. You don't _need_ to use `just`, but it's pretty convenient.
